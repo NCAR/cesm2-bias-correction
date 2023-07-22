@@ -1,5 +1,5 @@
 #This code mirrors the ncl script convert_cesm_hybric_nc_to_pressure_int.ncl
-#The old code interpolates the grid, convert to pressure coordinates, and converts to WRF-INT format
+#The old code bilinearly interpolates the grid, convert to pressure coordinates, and converts to WRF-INT format
 #This code will only interpolate the grid and convert to pressure coordinates (no conversion to WRF-INT)
 
 #INPUTS:    3D CESM 6hr data, in netCDF4 format
@@ -54,59 +54,24 @@ in_sic = xr.open_dataset("atmos_sic_1.nc")     # daily SEAICE % on POP grid (gau
 
 #Interpolate SST and SEA ICE fields to CESM Atmospheric Domain ----------------------------------------------------------------------------------
 
-print('Converting POP info into rectangular grid...')
+print('Converting Parallel Ocean Program data to coordinate system of atmospheric grid...')
 
-#lat_corners, lon_corners = gen_corner_calc(era_data)
+#Create a mask (not needed for interpolating to atmospheric grid, but just in case there are missing values)
+in_tos["mask"] = xr.where(~np.isnan(in_tos["tos"].sel(time=in_tos["tos"].time[0]),1,0)) 
+#in_ta["mask"] = xr.where(~np.isnan(in_ta["tos"].sel(time=in_ta["tos"].time[0]),1,0)) 
 
 #Regrids SST grid to whatever the atmospheric grid is automatically
-regrid = xe.Regridder(in_tos, in_ta, method = 'bilinear')
-regrid.to_netcdf('gx1v6_to_era_latlon.nc')
+regrid = xe.Regridder(in_tos, in_ta, method = 'bilinear', periodic=True)
+regrid.to_netcdf('weights_gx1v6_latlon.nc') #write out weights for reuse 
 
-rectangular_SST = regrid(in_tos)
-print(rectangular_SST)
-rectangular_SST.to_netcdf('python_regrid.nc')
+regridded_SST = regrid(in_tos)
+regridded_SST.to_netcdf('python_regrid_ncl.nc')
 #
 #use some sort of broadcasting or view here to clone to a 6-hrly variable
 
 
-#replace the default values here 
-#def gen_corner_calc(ds, cell_corner_lat='ULAT', cell_corner_lon='ULONG'):
-#    """
-#    Generates corner information and creates single dataset with output
-#    """
-#
-#    cell_corner_lat = ds[cell_corner_lat]
-#    cell_corner_lon = ds[cell_corner_lon]
-#    # Use the function in pop-tools to get the grid corner information
-#    corn_lat, corn_lon = _compute_corners(cell_corner_lat, cell_corner_lon)
-#
-#    # Make sure this returns four corner points
-#    assert corn_lon.shape[-1] == 4
-#
-#    lon_shape, lat_shape = corn_lon[:, :, 0].shape
-#    out_shape = (lon_shape + 1, lat_shape + 1)
-#
-#    # Generate numpy arrays to store destination lats/lons
-#    out_lons = np.zeros(out_shape)
-#    out_lats = np.zeros(out_shape)
-#
-#    # Assign the northeast corner information
-#    out_lons[1:, 1:] = corn_lon[:, :, 0]
-#    out_lats[1:, 1:] = corn_lat[:, :, 0]
-#
-#    # Assign the northwest corner information
-#    out_lons[1:, :-1] = corn_lon[:, :, 1]
-#    out_lats[1:, :-1] = corn_lat[:, :, 1]
-#
-#    # Assign the southwest corner information
-#    out_lons[:-1, :-1] = corn_lon[:, :, 2]
-#    out_lats[:-1, :-1] = corn_lat[:, :, 2]
-#
-#    # Assign the southeast corner information
-#    out_lons[:-1, 1:] = corn_lon[:, :, 3]
-#    out_lats[:-1, 1:] = corn_lat[:, :, 3]
-#
-#    return out_lats, out_lons
-
 #Turn monthly data into 6hr data ----------------------------------------------------------------------------------
 print('Upsampling montly data...')
+
+def is_missing(data : xr.DataArray): 
+    
