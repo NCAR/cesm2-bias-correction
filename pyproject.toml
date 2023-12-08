@@ -27,4 +27,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/NCAR/cesm-bias-correction"
+Homepage = "https://github.com/NCAR/cesm-bias-correction"
+Repository = "https://github.com/NCAR/cesm-bias-correction"
