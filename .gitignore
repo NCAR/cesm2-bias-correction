@@ -1,0 +1,6 @@
+dist/*
+*egg-info
+
+docs/Makefile
+docs/make.bat
+docs/source/*
