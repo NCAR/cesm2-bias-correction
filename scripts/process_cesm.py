@@ -82,6 +82,9 @@ def main(opts):
    # sea level pressure
    slp = pslec(temp.isel(lev=-1), phi_surf, surf_pressure, P_hybrid.isel(lev=-1))
 
+   # pressure on hybrid sigma-pressure levels
+   P_hybrid = pres_on_hybrid_ccm(surf_pressure,hyam,hybm).astype(np.single)
+
 def configure_log(**kwargs):
    """ Configure logging """
 

@@ -107,6 +107,9 @@ def pslec_atomic(temp_bot,phi_s,ps,pressure_bot):
 def pslec(temp_bottom: xr.DataArray, phi_surf: xr.DataArray, pressure_surf: xr.DataArray, pressure_bot: xr.DataArray): 
     return xr.apply_ufunc(pslec_atomic,temp_bottom,phi_surf,pressure_surf,pressure_bot)
 
-def pres_on_hybrid():
-   """ Calculate pressure on hybrid sigma-pressure levels """
+@vectorize([float64(float64,float64,float64,float64)],nopython=True)
+def pres_on_hybrid_ccm_atomic(pressure_surf, hyam_k, hybm_k, ref_pressure): 
+    return hyam_k*ref_pressure + hybm_k*pressure_surf 
 
+def pres_on_hybrid_ccm(pressure_surf : xr.DataArray , hyam: xr.DataArray, hybm: xr.DataArray, ref_pressure =  100000): 
+    return xr.apply_ufunc(pres_on_hybrid_ccm_atomic, pressure_surf, hyam, hybm, ref_pressure) 
