@@ -13,6 +13,8 @@ import logging.handlers
 import os, sys
 import xarray as xr
 from cdo import *
+from pathlib import Path
+from datetime import datetime
 
 from cesm_bias_correction.hybrid2pressure import *
 
@@ -51,7 +53,14 @@ cases = {
    }
 }
 
+_DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31]  # Ignore leap days
+
 def main(opts):
+
+   # iterate through years and months
+   for year in range(opts['start_year'], opts['end_year']):
+      for month in range(1, 13):
+         
 
    """ Read input data """
    logger.info("Opening files...")
@@ -70,6 +79,8 @@ def main(opts):
    in_tos = xr.open_dataset("atmos_tos_1.nc")     # daily SST on pop grid (gaussian)
    in_sic = xr.open_dataset("atmos_sic_1.nc")     # daily SEAICE percentage on POP grid (gaussian)    
 
+   # sea level pressure
+   slp = pslec(temp.isel(lev=-1), phi_surf, surf_pressure, P_hybrid.isel(lev=-1))
 
 def configure_log(**kwargs):
    """ Configure logging """
